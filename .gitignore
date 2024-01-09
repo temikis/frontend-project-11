@@ -1,0 +1,4 @@
+/node_modules/
+*.log
+/coverage/
+._package.json

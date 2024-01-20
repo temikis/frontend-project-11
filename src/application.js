@@ -1,5 +1,6 @@
 import * as yup from 'yup';
 import i18n from 'i18next';
+import axios from 'axios';
 import view from './view';
 import resources from './locales/index.js';
 
@@ -73,11 +74,15 @@ export default async () => {
 
     schema.validate(data)
       .then(({ url }) => {
-        state.feeds.push(url);
-        state.loadingProcess = {
-          processState: STATUS.SUCCESS,
-          processError: null,
-        };
+        return axios.get(url);
+      })
+      .then((value) => {
+        console.log(value);
+        // state.feeds.push(url);
+        // state.loadingProcess = {
+        //   processState: STATUS.SUCCESS,
+        //   processError: null,
+        // };
       })
       .catch((error) => {
         state.loadingProcess = {

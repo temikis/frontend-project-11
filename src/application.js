@@ -1,13 +1,17 @@
 import * as yup from 'yup';
+import i18n from 'i18next';
 import view from './view';
+import resources from './locales/index.js';
 
 const STATUS = {
   LOADING: 'loading',
-  SUCCES: 'succes',
+  SUCCESS: 'success',
   FAIL: 'fail',
 };
 
-export default () => {
+const defaultLanguage = 'ru';
+
+export default async () => {
   const elements = {
     form: document.querySelector('.rss-form'),
     fields: {
@@ -29,15 +33,32 @@ export default () => {
     feeds: [],
   };
 
-  const state = view(initialState, elements);
+  yup.setLocale({
+    mixed: {
+      notOneOf: 'error.repeat',
+    },
+    string: {
+      url: 'error.url',
+    },
+  });
+
+  const i18nInstance = i18n.createInstance();
+  // тут нужно переделать без await
+  await i18nInstance.init({
+    lng: defaultLanguage,
+    debug: false,
+    resources,
+  });
+
+  const state = view(initialState, elements, i18nInstance);
 
   elements.form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const schema = yup.object().shape({
-      url: yup.string().trim().required()
-        .url('Ссылка должна быть валидным URL')
-        .notOneOf(state.feeds, 'RSS уже существует'),
+      url: yup.string().required()
+        .url()
+        .notOneOf(state.feeds),
     });
 
     state.loadingProcess = {
@@ -54,7 +75,7 @@ export default () => {
       .then(({ url }) => {
         state.feeds.push(url);
         state.loadingProcess = {
-          processState: STATUS.SUCCES,
+          processState: STATUS.SUCCESS,
           processError: null,
         };
       })

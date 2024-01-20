@@ -1,6 +1,6 @@
 import onChange from 'on-change';
 
-const handleLoadingProcess = (elements, state) => {
+const handleLoadingProcess = (elements, state, i18nInstance) => {
   const { processState, processError } = state.loadingProcess;
   const { form, fields: { input, button }, feedback } = elements;
   switch (processState) {
@@ -8,16 +8,16 @@ const handleLoadingProcess = (elements, state) => {
       input.setAttribute('readonly', 'true');
       input.classList.remove('is-invalid');
       button.disabled = true;
-      feedback.innerText = '';
+      feedback.textContent = '';
       break;
 
-    case 'succes':
+    case 'success':
       input.removeAttribute('readonly');
       input.classList.remove('is-invalid');
       button.disabled = false;
       feedback.classList.remove('text-danger');
       feedback.classList.add('text-success');
-      feedback.innerText = 'RSS успешно загружен';
+      feedback.textContent = i18nInstance.t('success');
       form.reset();
       input.focus();
       break;
@@ -28,7 +28,7 @@ const handleLoadingProcess = (elements, state) => {
       button.disabled = false;
       feedback.classList.remove('text-success');
       feedback.classList.add('text-danger');
-      feedback.innerText = processError;
+      feedback.textContent = i18nInstance.t(processError);
       break;
 
     default:
@@ -36,11 +36,11 @@ const handleLoadingProcess = (elements, state) => {
   }
 };
 
-const render = (elements, state) => (path) => {
-  // console.log(path); (path, _value, _prevValue)
+const render = (elements, state, i18nInstance) => (path) => {
+  // console.log(path) (path, value, prevValue)
   switch (path) {
     case 'loadingProcess':
-      handleLoadingProcess(elements, state);
+      handleLoadingProcess(elements, state, i18nInstance);
       break;
 
     case 'signupProcess.processError':
@@ -60,8 +60,8 @@ const render = (elements, state) => (path) => {
   }
 };
 
-export default (initialState, elements) => {
-  const state = onChange(initialState, render(elements, initialState));
+export default (initialState, elements, i18nInstance) => {
+  const state = onChange(initialState, render(elements, initialState, i18nInstance));
 
   return state;
 };

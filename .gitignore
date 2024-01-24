@@ -2,3 +2,4 @@
 *.log
 /coverage/
 ._package.json
+html.html

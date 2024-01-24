@@ -1,8 +1,10 @@
 import * as yup from 'yup';
 import i18n from 'i18next';
 import axios from 'axios';
+import { uniqueId } from 'lodash';
 import view from './view';
 import resources from './locales/index.js';
+import parse from './parserRss.js';
 
 const STATUS = {
   LOADING: 'loading',
@@ -11,6 +13,21 @@ const STATUS = {
 };
 
 const defaultLanguage = 'ru';
+
+const getAllUrl = (state) => state.feeds.map((element) => element.url);
+
+const addNewContent = (url, value, state) => {
+  const id = String(uniqueId());
+  const { feed, posts } = value;
+
+  state.feeds.push({ id, url, ...feed });
+  const newPosts = posts.map((newPost) => ({
+    id: String(uniqueId()),
+    feedId: id,
+    ...newPost,
+  }));
+  state.posts.unshift(...newPosts);
+};
 
 export default async () => {
   const elements = {
@@ -32,6 +49,7 @@ export default async () => {
     },
     form: {},
     feeds: [],
+    posts: [],
   };
 
   yup.setLocale({
@@ -59,7 +77,7 @@ export default async () => {
     const schema = yup.object().shape({
       url: yup.string().required()
         .url()
-        .notOneOf(state.feeds),
+        .notOneOf(getAllUrl(state)),
     });
 
     state.loadingProcess = {
@@ -68,21 +86,21 @@ export default async () => {
     };
 
     const formData = new FormData(e.target);
-    const data = {
-      url: formData.get('url').trim(),
-    };
+    const url = formData.get('url').trim();
+    const data = { url };
 
     schema.validate(data)
-      .then(({ url }) => {
-        return axios.get(url);
-      })
+      .then(({ url }) => axios.get(`https://allorigins.hexlet.app/get?url=${url}`))
+      .then(parse)
       .then((value) => {
-        console.log(value);
+        // console.log(value);
         // state.feeds.push(url);
-        // state.loadingProcess = {
-        //   processState: STATUS.SUCCESS,
-        //   processError: null,
-        // };
+        state.loadingProcess = {
+          processState: STATUS.SUCCESS,
+          processError: null,
+        };
+
+        addNewContent(url, value, state);
       })
       .catch((error) => {
         state.loadingProcess = {

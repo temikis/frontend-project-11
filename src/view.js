@@ -36,19 +36,107 @@ const handleLoadingProcess = (elements, state, i18nInstance) => {
   }
 };
 
-const render = (elements, state, i18nInstance) => (path) => {
-  // console.log(path) (path, value, prevValue)
+const handleFeeds = (elements, state, i18nInstance) => {
+  const { feeds } = elements;
+  feeds.innerHTML = '';
+
+  const cardElement = document.createElement('div');
+  cardElement.classList.add('card', 'border-0');
+
+  const cardBodyElement = document.createElement('div');
+  cardBodyElement.classList.add('card-body');
+
+  const titleElement = document.createElement('h2');
+  titleElement.classList.add('card-title', 'h4');
+  titleElement.textContent = i18nInstance.t('feeds');
+  cardBodyElement.appendChild(titleElement);
+
+  const listElement = document.createElement('ul');
+  listElement.classList.add('list-group', 'border-0', 'rounded-0');
+
+  state.feeds.forEach((feed) => {
+    const listItemElement = document.createElement('li');
+    listItemElement.classList.add('list-group-item', 'border-0', 'border-end-0');
+
+    const listItemTitleElement = document.createElement('h3');
+    listItemTitleElement.classList.add('h6', 'm-0');
+    listItemTitleElement.textContent = feed.title;
+    
+    const listItemDescriptionElement = document.createElement('p');
+    listItemDescriptionElement.classList.add('m-0', 'small', 'text-black-50');
+    listItemDescriptionElement.textContent = feed.description;
+    
+    listItemElement.appendChild(listItemTitleElement);
+    listItemElement.appendChild(listItemDescriptionElement);
+    listElement.appendChild(listItemElement);
+  });
+  cardElement.appendChild(cardBodyElement);
+  cardElement.appendChild(listElement);
+
+  feeds.appendChild(cardElement);
+};
+
+const handlePosts = (elements, state, i18nInstance) => {
+  const { posts } = elements;
+  posts.innerHTML = '';
+
+  const cardElement = document.createElement('div');
+  cardElement.classList.add('card', 'border-0');
+
+  const cardBodyElement = document.createElement('div');
+  cardBodyElement.classList.add('card-body');
+
+  const titleElement = document.createElement('h2');
+  titleElement.classList.add('card-title', 'h4');
+  titleElement.textContent = i18nInstance.t('posts');
+
+  cardBodyElement.appendChild(titleElement);
+
+  const listElement = document.createElement('ul');
+  listElement.classList.add('list-group', 'border-0', 'rounded-0');
+
+  state.posts.forEach((post) => {
+    const listItemElement = document.createElement('li');
+    listItemElement.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
+
+    const linkElement = document.createElement('a');
+    linkElement.href = post.link;
+    linkElement.classList.add('fw-bold');
+    linkElement.textContent = post.title;
+
+    const viewButtonElement = document.createElement('button');
+    viewButtonElement.type = 'button';
+    viewButtonElement.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+    viewButtonElement.textContent = i18nInstance.t('view');
+
+    viewButtonElement.setAttribute('data-id', post.id);
+    viewButtonElement.setAttribute('data-bs-toggle', 'modal');
+    viewButtonElement.setAttribute('data-bs-target', '#modal');
+
+    listItemElement.appendChild(linkElement);
+    listItemElement.appendChild(viewButtonElement);
+
+    listElement.appendChild(listItemElement);
+  });
+  cardElement.appendChild(cardBodyElement);
+  cardElement.appendChild(listElement);
+
+  posts.appendChild(cardElement);
+};
+
+const render = (elements, state, i18nInstance) => (path, value, prevValue) => {
+  // console.log(path);
   switch (path) {
     case 'loadingProcess':
       handleLoadingProcess(elements, state, i18nInstance);
       break;
 
-    case 'signupProcess.processError':
-      // handleProcessError();
+    case 'feeds':
+      handleFeeds(elements, state, i18nInstance);
       break;
 
-    case 'form.valid':
-      // elements.submitButton.disabled = !value;
+    case 'posts':
+      handlePosts(elements, state, i18nInstance);
       break;
 
     case 'form.errors':

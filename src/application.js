@@ -16,6 +16,8 @@ const defaultLanguage = 'ru';
 
 const getAllUrl = (state) => state.feeds.map((element) => element.url);
 
+const getResponse = async ({ url }) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${url}`);
+
 const addNewContent = (url, value, state) => {
   const id = String(uniqueId());
   const { feed, posts } = value;
@@ -27,6 +29,33 @@ const addNewContent = (url, value, state) => {
     ...newPost,
   }));
   state.posts.unshift(...newPosts);
+};
+
+const watcherNews = (state) => {
+  // state = feeds: {id, title, description}, posts: [{id, feedid, title, link, description}, ...]
+  const { feeds, posts } = state;
+
+  const promises = Promise.all(feeds.map(getResponse));
+  promises.then((respones) => {
+    respones.forEach((respone) => {
+      const { feed, posts: postsOfFeed } = parse(respone);
+      const { id } = feeds.find((feedItem) => feedItem.title === feed.title);
+      // {id, feedId, description, title, link}
+      const filtredPosts = posts.filter((post) => post.feedId === id);
+      const uniqueNewPosts = postsOfFeed.filter((postOfFeed) => {
+        const comparator = !filtredPosts.find((filtredPost) => {filtredPost.title === postOfFeed.title});
+        return comparator;
+      });
+      
+      if (uniqueNewPosts.length > 0) {
+        uniqueNewPosts.forEach((newPost) => {
+          const preparedNewPost = { id: String(uniqueId()), feedId: id, ...newPost };
+          return posts.unshift(preparedNewPost);
+        });
+      }
+    });
+  });
+  setTimeout(() => watcherNews(state), 5000);
 };
 
 export default async () => {
@@ -90,11 +119,9 @@ export default async () => {
     const data = { url };
 
     schema.validate(data)
-      .then(({ url }) => axios.get(`https://allorigins.hexlet.app/get?url=${url}`))
+      .then(getResponse)
       .then(parse)
       .then((value) => {
-        // console.log(value);
-        // state.feeds.push(url);
         state.loadingProcess = {
           processState: STATUS.SUCCESS,
           processError: null,
@@ -109,4 +136,6 @@ export default async () => {
         };
       });
   });
+
+  watcherNews(state);
 };

@@ -49,6 +49,7 @@ const handleFeeds = (elements, state, i18nInstance) => {
   const titleElement = document.createElement('h2');
   titleElement.classList.add('card-title', 'h4');
   titleElement.textContent = i18nInstance.t('feeds');
+
   cardBodyElement.appendChild(titleElement);
 
   const listElement = document.createElement('ul');
@@ -61,11 +62,11 @@ const handleFeeds = (elements, state, i18nInstance) => {
     const listItemTitleElement = document.createElement('h3');
     listItemTitleElement.classList.add('h6', 'm-0');
     listItemTitleElement.textContent = feed.title;
-    
+
     const listItemDescriptionElement = document.createElement('p');
     listItemDescriptionElement.classList.add('m-0', 'small', 'text-black-50');
     listItemDescriptionElement.textContent = feed.description;
-    
+
     listItemElement.appendChild(listItemTitleElement);
     listItemElement.appendChild(listItemDescriptionElement);
     listElement.appendChild(listItemElement);

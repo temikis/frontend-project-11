@@ -77,7 +77,10 @@ export default async () => {
       processState: 'succes',
       processError: null,
     },
-    form: {},
+    stateUI: {
+      viewModalId: null,
+      watchedPosts: new Set(),
+    },
     feeds: [],
     posts: [],
   };
@@ -136,6 +139,14 @@ export default async () => {
           processError: error.message,
         };
       });
+  });
+
+  elements.posts.addEventListener('click', (e) => {
+    const postId = e.target.dataset.id;
+    if (postId) {
+      state.stateUI.watchedPosts.add(postId);
+      state.stateUI.viewModalId = postId;
+    }
   });
 
   watcherNews(state);

@@ -102,7 +102,8 @@ const handlePosts = (elements, state, i18nInstance) => {
 
     const linkElement = document.createElement('a');
     linkElement.href = post.link;
-    linkElement.classList.add('fw-bold');
+    const isWatched = state.stateUI.watchedPosts.has(post.id);
+    linkElement.classList.add(isWatched ? 'fw-normal' : 'fw-bold');
     linkElement.textContent = post.title;
 
     const viewButtonElement = document.createElement('button');
@@ -125,8 +126,34 @@ const handlePosts = (elements, state, i18nInstance) => {
   posts.appendChild(cardElement);
 };
 
+const handleModal = (elements, state, id) => {
+  const { posts } = state;
+  const { modal } = elements;
+  const { title, description, link}  = posts.find((post) => post.id === id);
+  
+  const modalTitle = modal.querySelector('.modal-title');
+  const modalBody = modal.querySelector('.modal-body');
+  const fullArticleLink = modal.querySelector('.full-article');
+
+  modalTitle.textContent = title;
+  modalBody.textContent = description;
+  fullArticleLink.href = link;
+};
+
+const updateWatchedPosts = (value) => {
+  value.forEach((id) => {
+    console.log(id);
+    const button = document.querySelector(`button[data-id='${id}']`);
+    if (button) {
+      const link = button.parentElement.querySelector('a');
+      link.classList.remove('fw-bold');
+      link.classList.add('fw-normal');
+    }
+  });
+};
+
 const render = (elements, state, i18nInstance) => (path, value, prevValue) => {
-  // console.log(path);
+  console.log(path);
   switch (path) {
     case 'loadingProcess':
       handleLoadingProcess(elements, state, i18nInstance);
@@ -140,8 +167,12 @@ const render = (elements, state, i18nInstance) => (path, value, prevValue) => {
       handlePosts(elements, state, i18nInstance);
       break;
 
-    case 'form.errors':
-      // renderErrors(elements, value, prevValue, initialState);
+    case 'stateUI.viewModalId':
+      handleModal(elements, state, value);
+      break;
+
+    case 'stateUI.watchedPosts':
+      updateWatchedPosts(value);
       break;
 
     default:

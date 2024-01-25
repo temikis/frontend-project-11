@@ -36,6 +36,7 @@ const watcherNews = (state) => {
   const { feeds, posts } = state;
 
   const promises = Promise.all(feeds.map(getResponse));
+
   promises.then((respones) => {
     respones.forEach((respone) => {
       const { feed, posts: postsOfFeed } = parse(respone);
@@ -43,7 +44,7 @@ const watcherNews = (state) => {
       // {id, feedId, description, title, link}
       const filtredPosts = posts.filter((post) => post.feedId === id);
       const uniqueNewPosts = postsOfFeed.filter((postOfFeed) => {
-        const comparator = !filtredPosts.find((filtredPost) => {filtredPost.title === postOfFeed.title});
+        const comparator = !filtredPosts.some((filtredPost) => filtredPost.title === postOfFeed.title);
         return comparator;
       });
       

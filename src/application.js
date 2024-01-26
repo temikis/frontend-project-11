@@ -18,6 +18,27 @@ const getAllUrl = (state) => state.feeds.map((element) => element.url);
 
 const getResponse = async ({ url }) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${url}`);
 
+const validate = async (url, state) => {
+  const data = { url };
+
+  yup.setLocale({
+    mixed: {
+      notOneOf: 'error.repeat',
+    },
+    string: {
+      url: 'error.url',
+    },
+  });
+
+  const schema = yup.object().shape({
+    url: yup.string().required()
+      .url()
+      .notOneOf(getAllUrl(state)),
+  });
+
+  return schema.validate(data);
+};
+
 const addNewContent = (url, value, state) => {
   const id = String(uniqueId());
   const { feed, posts } = value;
@@ -44,10 +65,10 @@ const watcherNews = (state) => {
       // {id, feedId, description, title, link}
       const filtredPosts = posts.filter((post) => post.feedId === id);
       const uniqueNewPosts = postsOfFeed.filter((postOfFeed) => {
-        const comparator = !filtredPosts.some((filtredPost) => filtredPost.title === postOfFeed.title);
-        return comparator;
+        const compare = !filtredPosts.some((filtredPost) => filtredPost.title === postOfFeed.title);
+        return compare;
       });
-      
+
       if (uniqueNewPosts.length > 0) {
         uniqueNewPosts.forEach((newPost) => {
           const preparedNewPost = { id: String(uniqueId()), feedId: id, ...newPost };
@@ -59,7 +80,7 @@ const watcherNews = (state) => {
   setTimeout(() => watcherNews(state), 5000);
 };
 
-export default async () => {
+export default () => {
   const elements = {
     form: document.querySelector('.rss-form'),
     fields: {
@@ -85,69 +106,51 @@ export default async () => {
     posts: [],
   };
 
-  yup.setLocale({
-    mixed: {
-      notOneOf: 'error.repeat',
-    },
-    string: {
-      url: 'error.url',
-    },
-  });
-
   const i18nInstance = i18n.createInstance();
-  // тут нужно переделать без await
-  await i18nInstance.init({
+  i18nInstance.init({
     lng: defaultLanguage,
     debug: false,
     resources,
-  });
+  }).then(() => {
+    const state = view(initialState, elements, i18nInstance);
 
-  const state = view(initialState, elements, i18nInstance);
+    elements.form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const url = formData.get('url').trim();
 
-  elements.form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+      state.loadingProcess = {
+        processState: STATUS.LOADING,
+        processError: null,
+      };
 
-    const schema = yup.object().shape({
-      url: yup.string().required()
-        .url()
-        .notOneOf(getAllUrl(state)),
+      validate(url, state)
+        .then(getResponse)
+        .then(parse)
+        .then((value) => {
+          state.loadingProcess = {
+            processState: STATUS.SUCCESS,
+            processError: null,
+          };
+
+          addNewContent(url, value, state);
+        })
+        .catch((error) => {
+          state.loadingProcess = {
+            processState: STATUS.FAIL,
+            processError: error.message,
+          };
+        });
     });
 
-    state.loadingProcess = {
-      processState: STATUS.LOADING,
-      processError: null,
-    };
+    elements.posts.addEventListener('click', (e) => {
+      const postId = e.target.dataset.id;
+      if (postId) {
+        state.stateUI.watchedPosts.add(postId);
+        state.stateUI.viewModalId = postId;
+      }
+    });
 
-    const formData = new FormData(e.target);
-    const url = formData.get('url').trim();
-    const data = { url };
-
-    schema.validate(data)
-      .then(getResponse)
-      .then(parse)
-      .then((value) => {
-        state.loadingProcess = {
-          processState: STATUS.SUCCESS,
-          processError: null,
-        };
-
-        addNewContent(url, value, state);
-      })
-      .catch((error) => {
-        state.loadingProcess = {
-          processState: STATUS.FAIL,
-          processError: error.message,
-        };
-      });
+    watcherNews(state);
   });
-
-  elements.posts.addEventListener('click', (e) => {
-    const postId = e.target.dataset.id;
-    if (postId) {
-      state.stateUI.watchedPosts.add(postId);
-      state.stateUI.viewModalId = postId;
-    }
-  });
-
-  watcherNews(state);
 };

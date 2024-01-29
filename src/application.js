@@ -2,7 +2,7 @@ import * as yup from 'yup';
 import i18n from 'i18next';
 import axios from 'axios';
 import { uniqueId } from 'lodash';
-import view from './view';
+import view from './view.js';
 import resources from './locales/index.js';
 import parse from './parserRss.js';
 

@@ -14,13 +14,17 @@ const STATUS = {
 
 const defaultLanguage = 'ru';
 
-const getAllUrl = (state) => state.feeds.map((element) => element.url);
+const getProxy = (url) => {
+  const proxy = new URL('/get', 'https://allorigins.hexlet.app');
+  proxy.searchParams.set('disableCache', 'true');
+  proxy.searchParams.set('url', url);
+  console.log(proxy);
+  return proxy;
+};
 
-const getResponse = async ({ url }) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${url}`);
+const selectFeedsUrls = (state) => state.feeds.map((element) => element.url);
 
-const validate = async (url, state) => {
-  const data = { url };
-
+const validate = async (url, existingUrls) => {
   yup.setLocale({
     mixed: {
       notOneOf: 'error.repeat',
@@ -30,13 +34,9 @@ const validate = async (url, state) => {
     },
   });
 
-  const schema = yup.object().shape({
-    url: yup.string().required()
-      .url()
-      .notOneOf(getAllUrl(state)),
-  });
+  const schema = yup.string().required().url().notOneOf(existingUrls);
 
-  return schema.validate(data);
+  return schema.validate(url);
 };
 
 const addNewContent = (url, value, state) => {
@@ -53,16 +53,14 @@ const addNewContent = (url, value, state) => {
 };
 
 const watcherNews = (state) => {
-  // state = feeds: {id, title, description}, posts: [{id, feedid, title, link, description}, ...]
   const { feeds, posts } = state;
 
-  const promises = Promise.all(feeds.map(getResponse));
+  const promises = Promise.all(feeds.map((url) => axios.get(getProxy(url))));
 
   promises.then((respones) => {
     respones.forEach((respone) => {
       const { feed, posts: postsOfFeed } = parse(respone);
       const { id } = feeds.find((feedItem) => feedItem.title === feed.title);
-      // {id, feedId, description, title, link}
       const filtredPosts = posts.filter((post) => post.feedId === id);
       const uniqueNewPosts = postsOfFeed.filter((postOfFeed) => {
         const compare = !filtredPosts.some((filtredPost) => filtredPost.title === postOfFeed.title);
@@ -118,14 +116,15 @@ export default () => {
       e.preventDefault();
       const formData = new FormData(e.target);
       const url = formData.get('url').trim();
+      const existingUrls = selectFeedsUrls(state);
 
       state.loadingProcess = {
         processState: STATUS.LOADING,
         processError: null,
       };
 
-      validate(url, state)
-        .then(getResponse)
+      validate(url, existingUrls)
+        .then((url) => axios.get(getProxy(url)))
         .then(parse)
         .then((value) => {
           state.loadingProcess = {

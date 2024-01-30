@@ -9,5 +9,6 @@ parserOptions:
   sourceType: module
 rules: {
   "no-console": "off",
-  "import/extensions": "off"
+  "import/extensions": "off",
+  "no-underscore-dangle":  ["error", { "allow": ["__filename", "__dirname"] }]
 }

@@ -18,7 +18,7 @@ const getProxy = (url) => {
   const proxy = new URL('/get', 'https://allorigins.hexlet.app');
   proxy.searchParams.set('disableCache', 'true');
   proxy.searchParams.set('url', url);
-  console.log(proxy);
+
   return proxy;
 };
 
@@ -55,7 +55,7 @@ const addNewContent = (url, value, state) => {
 const watcherNews = (state) => {
   const { feeds, posts } = state;
 
-  const promises = Promise.all(feeds.map((url) => axios.get(getProxy(url))));
+  const promises = Promise.all(feeds.map(({ url }) => axios.get(getProxy(url))));
 
   promises.then((respones) => {
     respones.forEach((respone) => {
@@ -74,7 +74,10 @@ const watcherNews = (state) => {
         });
       }
     });
-  });
+  })
+    .catch((error) => {
+      console.error(error);
+    });
   setTimeout(() => watcherNews(state), 5000);
 };
 
@@ -92,9 +95,13 @@ export default () => {
   };
 
   const initialState = {
+    form: {
+      isValid: true,
+      error: null,
+    },
     loadingProcess: {
-      processState: 'succes',
-      processError: null,
+      status: 'succes',
+      error: null,
     },
     stateUI: {
       viewModalId: null,
@@ -119,25 +126,43 @@ export default () => {
       const existingUrls = selectFeedsUrls(state);
 
       state.loadingProcess = {
-        processState: STATUS.LOADING,
-        processError: null,
+        status: STATUS.LOADING,
+        error: null,
       };
 
       validate(url, existingUrls)
-        .then((url) => axios.get(getProxy(url)))
+        .catch((error) => {
+          state.form = {
+            isValid: false,
+            error: error.message,
+          };
+
+          throw new Error();
+        })
+        .then((valideUrl) => {
+          state.form = {
+            isValid: true,
+            error: null,
+          };
+
+          return axios.get(getProxy(valideUrl));
+        })
+        .catch(() => {
+          throw new Error('error.networkError');
+        })
         .then(parse)
         .then((value) => {
           state.loadingProcess = {
-            processState: STATUS.SUCCESS,
-            processError: null,
+            status: STATUS.SUCCESS,
+            error: null,
           };
 
           addNewContent(url, value, state);
         })
         .catch((error) => {
           state.loadingProcess = {
-            processState: STATUS.FAIL,
-            processError: error.message,
+            status: STATUS.FAIL,
+            error: error.message,
           };
         });
     });

@@ -145,10 +145,10 @@ export default () => {
             error: null,
           };
 
-          return axios.get(getProxy(valideUrl));
-        })
-        .catch(() => {
-          throw new Error('error.networkError');
+          return axios.get(getProxy(valideUrl))
+            .catch(() => {
+              throw new Error('error.networkError');
+            });
         })
         .then(parse)
         .then((value) => {

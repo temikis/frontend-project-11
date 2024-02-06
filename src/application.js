@@ -4,6 +4,7 @@ import axios from 'axios';
 import { uniqueId } from 'lodash';
 import view from './view.js';
 import resources from './locales/index.js';
+import customErrors from './locales/customErrors.js';
 import parse from './parserRss.js';
 
 const STATUS = {
@@ -19,33 +20,24 @@ const getProxy = (url) => {
   proxy.searchParams.set('disableCache', 'true');
   proxy.searchParams.set('url', url);
 
-  return proxy;
+  return proxy.toString();
 };
 
 const selectFeedsUrls = (state) => state.feeds.map((element) => element.url);
 
 const validate = async (url, existingUrls) => {
-  yup.setLocale({
-    mixed: {
-      notOneOf: 'error.repeat',
-    },
-    string: {
-      url: 'error.url',
-    },
-  });
-
   const schema = yup.string().required().url().notOneOf(existingUrls);
 
   return schema.validate(url);
 };
 
 const addNewContent = (url, value, state) => {
-  const id = String(uniqueId());
+  const id = uniqueId();
   const { feed, posts } = value;
 
   state.feeds.push({ id, url, ...feed });
   const newPosts = posts.map((newPost) => ({
-    id: String(uniqueId()),
+    id: uniqueId(),
     feedId: id,
     ...newPost,
   }));
@@ -69,7 +61,7 @@ const watcherNews = (state) => {
 
       if (uniqueNewPosts.length > 0) {
         uniqueNewPosts.forEach((newPost) => {
-          const preparedNewPost = { id: String(uniqueId()), feedId: id, ...newPost };
+          const preparedNewPost = { id: uniqueId(), feedId: id, ...newPost };
           return posts.unshift(preparedNewPost);
         });
       }
@@ -117,6 +109,8 @@ export default () => {
     debug: false,
     resources,
   }).then(() => {
+    yup.setLocale(customErrors);
+
     const state = view(initialState, elements, i18nInstance);
 
     elements.form.addEventListener('submit', (e) => {

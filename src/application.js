@@ -7,13 +7,15 @@ import resources from './locales/index.js';
 import customErrors from './locales/customErrors.js';
 import parse from './parserRss.js';
 
+const defaultLanguage = 'ru';
+const updateTime = 5000;
+const waitingTime = 10000;
+
 const STATUS = {
   LOADING: 'loading',
   SUCCESS: 'success',
   FAIL: 'fail',
 };
-
-const defaultLanguage = 'ru';
 
 const getProxy = (url) => {
   const proxy = new URL('/get', 'https://allorigins.hexlet.app');
@@ -47,12 +49,9 @@ const addNewContent = (url, value, state) => {
 const watcherNews = (state) => {
   const { feeds, posts } = state;
 
-  const promises = Promise.all(feeds.map(({ url }) => axios.get(getProxy(url))));
-
-  promises.then((respones) => {
-    respones.forEach((respone) => {
-      const { feed, posts: postsOfFeed } = parse(respone);
-      const { id } = feeds.find((feedItem) => feedItem.title === feed.title);
+  const promises = feeds.map(({ url, id }) => axios.get(getProxy(url), { timeout: waitingTime })
+    .then((response) => {
+      const { posts: postsOfFeed } = parse(response);
       const filtredPosts = posts.filter((post) => post.feedId === id);
       const uniqueNewPosts = postsOfFeed.filter((postOfFeed) => {
         const compare = !filtredPosts.some((filtredPost) => filtredPost.title === postOfFeed.title);
@@ -65,12 +64,12 @@ const watcherNews = (state) => {
           return posts.unshift(preparedNewPost);
         });
       }
-    });
-  })
+    })
     .catch((error) => {
       console.error(error);
-    });
-  setTimeout(() => watcherNews(state), 5000);
+    }));
+
+  Promise.all(promises).then(setTimeout(() => watcherNews(state), updateTime));
 };
 
 export default () => {

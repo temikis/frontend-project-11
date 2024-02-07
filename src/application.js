@@ -27,10 +27,13 @@ const getProxy = (url) => {
 
 const selectFeedsUrls = (state) => state.feeds.map((element) => element.url);
 
-const validate = async (url, existingUrls) => {
+const validate = (url, existingUrls) => {
   const schema = yup.string().required().url().notOneOf(existingUrls);
 
-  return schema.validate(url);
+  return schema
+    .validate(url)
+    .then(() => null)
+    .catch((error) => error.message);
 };
 
 const addNewContent = (url, value, state) => {
@@ -112,36 +115,15 @@ export default () => {
 
     const state = view(initialState, elements, i18nInstance);
 
-    elements.form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const url = formData.get('url').trim();
-      const existingUrls = selectFeedsUrls(state);
-
+    const loadFeed = (url) => {
       state.loadingProcess = {
         status: STATUS.LOADING,
         error: null,
       };
 
-      validate(url, existingUrls)
-        .catch((error) => {
-          state.form = {
-            isValid: false,
-            error: error.message,
-          };
-
-          throw new Error();
-        })
-        .then((valideUrl) => {
-          state.form = {
-            isValid: true,
-            error: null,
-          };
-
-          return axios.get(getProxy(valideUrl))
-            .catch(() => {
-              throw new Error('error.networkError');
-            });
+      return axios.get(getProxy(url))
+        .catch(() => {
+          throw new Error('error.networkError');
         })
         .then(parse)
         .then((value) => {
@@ -157,6 +139,30 @@ export default () => {
             status: STATUS.FAIL,
             error: error.message,
           };
+        });
+    };
+
+    elements.form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const url = formData.get('url').trim();
+      const existingUrls = selectFeedsUrls(state);
+
+      validate(url, existingUrls)
+        .then((error) => {
+          if (error) {
+            state.form = {
+              isValid: false,
+              error,
+            };
+            return;
+          }
+
+          state.form = {
+            isValid: true,
+            error: null,
+          };
+          loadFeed(url);
         });
     });
 

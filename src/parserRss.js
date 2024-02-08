@@ -4,7 +4,9 @@ export default (data) => {
 
   const errorNode = doc.querySelector('parsererror');
   if (errorNode) {
-    throw new Error('error.isNotRss');
+    const customError = new Error();
+    customError.isParserError = true;
+    throw customError;
   }
 
   const feedTitle = doc.querySelector('title').textContent;

@@ -25,6 +25,17 @@ const getProxy = (url) => {
   return proxy.toString();
 };
 
+const getErrorMessage = (error) => {
+  if (error.isAxiosError) {
+    return 'error.networkError';
+  }
+  if (error.isParserError) {
+    return 'error.isNotRss';
+  }
+
+  return 'error.unknownError';
+};
+
 const selectFeedsUrls = (state) => state.feeds.map((element) => element.url);
 
 const validate = (url, existingUrls) => {
@@ -122,11 +133,8 @@ export default () => {
       };
 
       return axios.get(getProxy(url))
-        .catch(() => {
-          throw new Error('error.networkError');
-        })
-        .then(parse)
-        .then((value) => {
+        .then((response) => {
+          const value = parse(response);
           state.loadingProcess = {
             status: STATUS.SUCCESS,
             error: null,
@@ -135,9 +143,10 @@ export default () => {
           addNewContent(url, value, state);
         })
         .catch((error) => {
+          const errorMessage = getErrorMessage(error);
           state.loadingProcess = {
             status: STATUS.FAIL,
-            error: error.message,
+            error: errorMessage,
           };
         });
     };

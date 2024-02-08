@@ -8,7 +8,7 @@ const createElement = (tagName, classNames = []) => {
   return element;
 };
 
-const handleForm = (elements, state, i18nInstance) => {
+const renderForm = (elements, state, i18nInstance) => {
   const { isValid, error } = state.form;
   const { feedback } = elements;
 
@@ -19,7 +19,7 @@ const handleForm = (elements, state, i18nInstance) => {
   }
 };
 
-const handleLoadingProcess = (elements, state, i18nInstance) => {
+const renderLoadingProcess = (elements, state, i18nInstance) => {
   const { status, error } = state.loadingProcess;
   const { form, fields: { input, button }, feedback } = elements;
   switch (status) {
@@ -57,7 +57,7 @@ const handleLoadingProcess = (elements, state, i18nInstance) => {
   }
 };
 
-const handleFeeds = (elements, state, i18nInstance) => {
+const renderFeeds = (elements, state, i18nInstance) => {
   const { feeds } = elements;
   feeds.innerHTML = '';
 
@@ -89,7 +89,7 @@ const handleFeeds = (elements, state, i18nInstance) => {
   feeds.appendChild(cardElement);
 };
 
-const handlePosts = (elements, state, i18nInstance) => {
+const renderPosts = (elements, state, i18nInstance) => {
   const { posts } = elements;
   posts.innerHTML = '';
 
@@ -127,7 +127,7 @@ const handlePosts = (elements, state, i18nInstance) => {
   posts.appendChild(cardElement);
 };
 
-const handleModal = (elements, state, id) => {
+const renderModal = (elements, state, id) => {
   const { posts } = state;
   const { modal } = elements;
   const { title, description, link } = posts.find((post) => post.id === id);
@@ -141,41 +141,27 @@ const handleModal = (elements, state, id) => {
   fullArticleLink.href = link;
 };
 
-const updateWatchedPosts = (value) => {
-  value.forEach((id) => {
-    const button = document.querySelector(`button[data-id='${id}']`);
-    if (button) {
-      const link = button.parentElement.querySelector('a');
-      link.classList.remove('fw-bold');
-      link.classList.add('fw-normal');
-    }
-  });
-};
-
 const render = (elements, state, i18nInstance) => (path, value) => {
   switch (path) {
     case 'form':
-      handleForm(elements, state, i18nInstance);
+      renderForm(elements, state, i18nInstance);
       break;
 
     case 'loadingProcess':
-      handleLoadingProcess(elements, state, i18nInstance);
+      renderLoadingProcess(elements, state, i18nInstance);
       break;
 
     case 'feeds':
-      handleFeeds(elements, state, i18nInstance);
+      renderFeeds(elements, state, i18nInstance);
       break;
 
     case 'posts':
-      handlePosts(elements, state, i18nInstance);
+    case 'stateUI.watchedPosts':
+      renderPosts(elements, state, i18nInstance);
       break;
 
     case 'stateUI.viewModalId':
-      handleModal(elements, state, value);
-      break;
-
-    case 'stateUI.watchedPosts':
-      updateWatchedPosts(value);
+      renderModal(elements, state, value);
       break;
 
     default:

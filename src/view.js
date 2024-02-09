@@ -8,6 +8,13 @@ const createElement = (tagName, classNames = []) => {
   return element;
 };
 
+const clearFeedback = (elements) => {
+  const { feedback } = elements;
+
+  feedback.textContent = '';
+  feedback.classList.remove('text-success', 'text-danger');
+};
+
 const renderForm = (elements, state, i18nInstance) => {
   const { isValid, error } = state.form;
   const { feedback } = elements;
@@ -16,6 +23,8 @@ const renderForm = (elements, state, i18nInstance) => {
     feedback.classList.remove('text-success');
     feedback.classList.add('text-danger');
     feedback.textContent = i18nInstance.t(error);
+  } else {
+    clearFeedback(elements);
   }
 };
 
@@ -27,7 +36,7 @@ const renderLoadingProcess = (elements, state, i18nInstance) => {
       input.setAttribute('readonly', 'true');
       input.classList.remove('is-invalid');
       button.disabled = true;
-      feedback.textContent = '';
+      clearFeedback(elements);
       break;
 
     case 'success':

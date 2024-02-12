@@ -47,17 +47,17 @@ const validate = (url, existingUrls) => {
     .catch((error) => error.message);
 };
 
-const addNewContent = (url, value, state) => {
+const addNewContent = (url, data, state) => {
   const id = uniqueId();
-  const { feed, posts } = value;
+  const { feed, posts } = data;
 
   state.feeds.push({ id, url, ...feed });
-  const newPosts = posts.map((newPost) => ({
+  const relatedPosts = posts.map((newPost) => ({
     id: uniqueId(),
     feedId: id,
     ...newPost,
   }));
-  state.posts.unshift(...newPosts);
+  state.posts.unshift(...relatedPosts);
 };
 
 const watcherNews = (state) => {
@@ -66,14 +66,14 @@ const watcherNews = (state) => {
   const promises = feeds.map(({ url, id }) => axios.get(getProxy(url), { timeout: waitingTime })
     .then((response) => {
       const { posts: postsOfFeed } = parse(response);
-      const filtredPosts = posts.filter((post) => post.feedId === id);
-      const uniqueNewPosts = postsOfFeed.filter((postOfFeed) => {
-        const compare = !filtredPosts.some((filtredPost) => filtredPost.title === postOfFeed.title);
+      const oldPosts = posts.filter((post) => post.feedId === id);
+      const newPosts = postsOfFeed.filter((postOfFeed) => {
+        const compare = !oldPosts.some((filtredPost) => filtredPost.title === postOfFeed.title);
         return compare;
       });
 
-      if (uniqueNewPosts.length > 0) {
-        uniqueNewPosts.forEach((newPost) => {
+      if (newPosts.length > 0) {
+        newPosts.forEach((newPost) => {
           const preparedNewPost = { id: uniqueId(), feedId: id, ...newPost };
           return posts.unshift(preparedNewPost);
         });
@@ -83,7 +83,7 @@ const watcherNews = (state) => {
       console.error(error);
     }));
 
-  Promise.all(promises).then(setTimeout(() => watcherNews(state), updateTime));
+  Promise.all(promises).then(() => setTimeout(() => watcherNews(state), updateTime));
 };
 
 export default () => {
@@ -134,13 +134,13 @@ export default () => {
 
       return axios.get(getProxy(url))
         .then((response) => {
-          const value = parse(response);
+          const data = parse(response);
           state.loadingProcess = {
             status: STATUS.SUCCESS,
             error: null,
           };
 
-          addNewContent(url, value, state);
+          addNewContent(url, data, state);
         })
         .catch((error) => {
           const errorMessage = getErrorMessage(error);
